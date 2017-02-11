@@ -1,4 +1,5 @@
 Для запуска модели необходимо:
+
 1. установить питон версии 2.7.13
 2. установить библиотеки matplotlib, pandas (pip install matplotlib в командной строке)
 3. запустить shale_model.py (python shale_model.py в командной строке)
