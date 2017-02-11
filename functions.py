@@ -7,37 +7,37 @@ def read_csv(csv_input_filename, columns_to_return):  # формат вызов�
         data = list(csv.reader(input_file, delimiter='\t'))
 
     input_file.close()
-    #print data
     return tuple(map(list, zip(*data)))[:columns_to_return]
 
 def generate_date_range(date_start, per):
     import pandas
     date_list = pandas.date_range(date_start, periods=per, freq='MS')
-    #date_list = [d.strftime('%d.%m.%y') for d in pandas.date_range(date_start, date_end, freq = 'MS')]
     return date_list
 
 def input_data() :
-    rigs_scenarios_input = raw_input('Введите через пробел сценарии буровых в виде доли от исторического максимума (1018 шт). Десятичную часть отделять точкой. Например: 0.25 1.1\n')
+    import sys
+    reload(sys)
+    sys.setdefaultencoding('cp866') # устанавливаем кодировку вывода консоли
+    rigs_scenarios_input = raw_input(u'Введите через пробел сценарии буровых в виде доли от исторического максимума. Десятичную часть отделять точкой. Например: 0.25 1.1\n')
     rigs_scenarios = rigs_scenarios_input.split()
     rigs_scenarios = list(map(float, rigs_scenarios))
-    ignore_productivity = int(raw_input('Учитывать в прогнозе изменение продуктивности буровых в зависимости от их количества? 1 = да, 0 = нет.\n'))
-    print ('ip = ', ignore_productivity)
+    ignore_productivity = int(raw_input(u'Учитывать в прогнозе изменение продуктивности буровых в зависимости от их количества? 1 = да, 0 = нет.\n'))
     if ignore_productivity == 1 :
         ignore_productivity = False
     elif ignore_productivity == 0 :
         ignore_productivity = True
     else :
-        print('Неверное значение')
+        print(u'Неверное значение')
         exit()
-    extrapolation_range = int(raw_input('Вветиде срок прогноза в месяцах. Конечный сценарий будет включать удвоенный срок: сначала количество буровых изменяется до заданного значения, далее стагнирует.\n'))
+    extrapolation_range = int(raw_input(u'Вветиде срок прогноза в месяцах. Конечный сценарий будет включать удвоенный срок: сначала количество буровых изменяется до заданного значения, далее стагнирует.\n'))
     if extrapolation_range == 0 :
-        print ('Срок прогнозирования должен быть отличен от нуля')
+        print (u'Срок прогнозирования должен быть отличен от нуля')
         exit()
     return rigs_scenarios, ignore_productivity, extrapolation_range
 
 def production_model(extrapolation_range, ignore_productivity, rig_ratio):
     production_decline = []
-    rig_saved, rig_productivity_saved, DPR_production = read_csv('data/dpr_rigs_and_productivity2.csv', 3)  # чтение csv
+    rig_saved, rig_productivity_saved, DPR_production = read_csv('data/dpr_rigs_and_productivity.csv', 3)  # чтение csv
     historical_range = len(rig_saved) - 1
     model_range = historical_range + 2 * extrapolation_range + 1
 
@@ -114,7 +114,7 @@ def generate_forecast(extrapolation_range, last_rigs, last_productivity, rig_cou
 def draw_model():
     import matplotlib  # импорт библиотеки рисования графика
     matplotlib.rc('font', family='DejaVu Sans') # шрифт с поддержкой русского языка
-    matplotlib.use('agg')
+    matplotlib.use('agg') # при необходимости можно убрать для sagemath взамен %inline
     import matplotlib.pyplot as plt
     rigs_scenarios, ignore_productivity, extrapolation_range = input_data() # функция ввода данных с клавиатуры
     fig = plt.figure(figsize=(10, 15)) # создание рисунка размером 1000*1500 пикс. с графиками 
@@ -165,5 +165,5 @@ def draw_model():
         chart4.legend()
         chart4.legend(loc='upper left')
         i = i + 1
-    #plt.show()
-    plt.savefig('chart2.png')   # сохранение нарисованного графика в файл
+    #plt.show() # включить для sagemath и выключить строку ниже
+    plt.savefig('chart.png')   # сохранение нарисованного графика в файл
