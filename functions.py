@@ -95,7 +95,7 @@ def generate_forecast(extrapolation_range, last_rigs, last_productivity, rig_cou
     if not ignore_productivity:
         for i in range(extrapolation_range):
             forecast_rigs.append(last_rigs + rig_count_step * (i + 1))
-            forecast_productivity.append(345000 / (forecast_rigs[-1] + 200) + 150)
+            forecast_productivity.append(345000 / (forecast_rigs[-1] + 200) + 210)
     else :
         for i in range(extrapolation_range):
             forecast_rigs.append(last_rigs + rig_count_step * (i + 1))
