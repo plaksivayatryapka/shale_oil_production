@@ -15,6 +15,11 @@ def generate_date_range(date_start, per): # генерация массива с
     return date_list
 
 def input_data() :
+    import sys
+    reload(sys)
+    sys.setdefaultencoding('cp866') # верхние три строки устанавливают кодировку вывода консоли. выключить для линукса.
+    
+    
     rigs_scenarios_input = raw_input('Введите через пробел сценарии буровых в виде доли от исторического максимума (1018 шт). Десятичную часть отделять точкой. Например: 0.25 1.1\n')
     rigs_scenarios = rigs_scenarios_input.split()
     rigs_scenarios = list(map(float, rigs_scenarios))
