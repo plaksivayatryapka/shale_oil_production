@@ -15,11 +15,6 @@ def generate_date_range(date_start, per): # генерация массива с
     return date_list
 
 def input_data() :
-    import sys
-    reload(sys)
-    sys.setdefaultencoding('cp866') # верхние три строки устанавливают кодировку вывода консоли. выключить для линукса.
-    
-    
     rigs_scenarios_input = raw_input('Введите через пробел сценарии буровых в виде доли от исторического максимума (1018 шт). Десятичную часть отделять точкой. Например: 0.25 1.1\n')
     rigs_scenarios = rigs_scenarios_input.split()
     rigs_scenarios = list(map(float, rigs_scenarios))
@@ -117,13 +112,21 @@ def generate_forecast(extrapolation_range, last_rigs, last_productivity, rig_cou
 
     return forecast_rigs, forecast_productivity
 
-def draw_model(): # рисование графика
+def draw_model(*args): # рисование графика
     import matplotlib  # импорт библиотеки рисования графика
     matplotlib.rc('font', family='DejaVu Sans') # шрифт с поддержкой русского языка
     matplotlib.use('agg') # при необходимости можно убрать для sagemath взамен %inline
     import matplotlib.pyplot as plt
     
-    rigs_scenarios, ignore_productivity, extrapolation_range = input_data() # ввод данных с клавиатуры
+    if not args :
+        rigs_scenarios, ignore_productivity, extrapolation_range = input_data() # ввод данных с клавиатуры
+    else:
+        rigs_scenarios = []
+        ignore_productivity = False
+        extrapolation_range = args[0][0]
+        for arg in args[0][1:] :
+            rigs_scenarios.append(arg)
+
     fig = plt.figure(figsize=(10, 15)) # создание рисунка размером 1000*1500 пикс. с графиками 
     chart1 = fig.add_subplot(411) # график и его расположение
     chart1.grid() # сетка для графика
