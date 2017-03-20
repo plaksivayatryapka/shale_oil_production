@@ -1,6 +1,9 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from functions import is_float
+
+
 def read_csv(csv_input_filename, columns_to_return):  # имя файла, количество столбцов для вывода
     import csv
     with open(csv_input_filename, 'rt') as input_file:
@@ -9,28 +12,29 @@ def read_csv(csv_input_filename, columns_to_return):  # имя файла, ко�
     input_file.close()
     return tuple(map(list, zip(*data)))[:columns_to_return]
 
+
 def generate_date_range(date_start, per): # генерация массива с датами для абсциссы
     import pandas
     date_list = pandas.date_range(date_start, periods=per, freq='MS')
     return date_list
+
 
 def input_data() :
     rigs_scenarios_input = raw_input('Введите через пробел сценарии буровых в виде доли от исторического максимума (1018 шт). Десятичную часть отделять точкой. Например: 0.25 1.1\n')
     rigs_scenarios = rigs_scenarios_input.split()
     rigs_scenarios = list(map(float, rigs_scenarios))
     ignore_productivity = int(raw_input('Учитывать в прогнозе изменение продуктивности буровых в зависимости от их количества? 1 = да, 0 = нет.\n'))
-    if ignore_productivity == 1 :
+    if ignore_productivity == 1:
         ignore_productivity = False
-    elif ignore_productivity == 0 :
+    elif ignore_productivity == 0:
         ignore_productivity = True
-    else :
+    else:
         print('Неверное значение')
         exit()
     extrapolation_range = int(raw_input('Вветиде срок прогноза в месяцах. Конечный сценарий будет включать удвоенный срок: сначала количество буровых изменяется до заданного значения, далее стагнирует.\n'))
-    if extrapolation_range == 0 :
-        print ('Срок прогнозирования должен быть отличен от нуля')
-        exit()
+
     return rigs_scenarios, ignore_productivity, extrapolation_range
+
 
 def production_model(extrapolation_range, ignore_productivity, rig_ratio): # моделирование до начала сценария
     production_decline = []
@@ -83,6 +87,7 @@ def production_model(extrapolation_range, ignore_productivity, rig_ratio): # м�
     
     return production, rigs, rig_productivity, new_production, production_decline, generate_date_range('2007-01-01', model_range), historical_range, DPR_production
 
+
 def generate_forecast(extrapolation_range, last_rigs, last_productivity, rig_count_step, rigs_target, ignore_productivity, rig_productivity):
     forecast_rigs = []
     forecast_rigs.append(last_rigs)
@@ -95,7 +100,7 @@ def generate_forecast(extrapolation_range, last_rigs, last_productivity, rig_cou
     if not ignore_productivity:
         for i in range(extrapolation_range):
             forecast_rigs.append(last_rigs + rig_count_step * (i + 1))
-            forecast_productivity.append(345000 / (forecast_rigs[-1] + 200) + 210)
+            forecast_productivity.append(345000 / (0.5*forecast_rigs[-1] + 250) + 62)
     else :
         for i in range(extrapolation_range):
             forecast_rigs.append(last_rigs + rig_count_step * (i + 1))
@@ -112,21 +117,33 @@ def generate_forecast(extrapolation_range, last_rigs, last_productivity, rig_cou
 
     return forecast_rigs, forecast_productivity
 
-def draw_model(*args): # рисование графика
+
+def draw_shale(*args):  # рисование графика
     import matplotlib  # импорт библиотеки рисования графика
     matplotlib.rc('font', family='DejaVu Sans') # шрифт с поддержкой русского языка
     matplotlib.use('agg') # при необходимости можно убрать для sagemath взамен %inline
     import matplotlib.pyplot as plt
     
-    if not args :
+    if not args:
         rigs_scenarios, ignore_productivity, extrapolation_range = input_data() # ввод данных с клавиатуры
+        filename = 'png/shale.png'
     else:
         rigs_scenarios = []
         ignore_productivity = False
-        extrapolation_range = args[0][0]
-        for arg in args[0][1:] :
-            rigs_scenarios.append(arg)
-
+        filename = args[0]
+        extrapolation_range = args[1][0]
+        for arg in args[1][1:]:
+            if is_float(arg) is not True:
+                rigs_scenarios.append(0)
+            else:
+                if arg < 0:
+                    rigs_scenarios.append(0)
+                else:
+                    rigs_scenarios.append(arg)
+    if extrapolation_range < 1:
+        extrapolation_range = 1
+    if extrapolation_range > 100:
+        extrapolation_range = 100
     fig = plt.figure(figsize=(10, 15)) # создание рисунка размером 1000*1500 пикс. с графиками 
     chart1 = fig.add_subplot(411) # график и его расположение
     chart1.grid() # сетка для графика
@@ -137,7 +154,7 @@ def draw_model(*args): # рисование графика
     chart4 = fig.add_subplot(414)
     chart4.grid()
     i = 1 # переменная обозначения циклов
-    for rig_ratio in rigs_scenarios: # цикл по сценариям буровых
+    for rig_ratio in rigs_scenarios:  # цикл по сценариям буровых
         production, rigs, rig_productivity, new_production, production_decline, dates, historical_range, DPR_production = \
             production_model(extrapolation_range, ignore_productivity, rig_ratio)
 
@@ -146,15 +163,16 @@ def draw_model(*args): # рисование графика
         if i == 1:  # рисование модельных данных без прогноза
             historical_dates = dates[:historical_range + 1] # массив дат
             chart1.plot(historical_dates, production_denom_m[:historical_range + 1], label=u'Модель')
-            chart1.plot(historical_dates, DPR_production[:historical_range + 1], label=u'Факт и модель EIA')
+            chart1.plot(historical_dates, DPR_production[:historical_range + 1], label=u'Факт и модель МинЭнерго США')
             chart2.plot(historical_dates, rigs[:historical_range + 1])
-            #chart2.set_ylim(ymin=0)  # ордината от нуля
+
             chart3.plot(historical_dates, rig_productivity[:historical_range + 1])
             chart4.plot(historical_dates, new_production[:historical_range + 1], label=u'Новая')
             chart4.plot(historical_dates, production_decline[:historical_range + 1], label=u'Старая')
 
         # рисование прогнозов
-        labels = u'сценарий %s' % i # переменная названия сценариев
+
+        labels = u'сценарий %s' % str(int(round(rig_ratio*100))) + '%'  # переменная названия сценариев
         forecast_dates = dates[historical_range:] # массив дат
         chart1.plot(forecast_dates, production_denom_m[historical_range:], ':', label=labels)
         chart2.plot(forecast_dates, rigs[historical_range + 1:], ':', label=labels)
@@ -166,18 +184,19 @@ def draw_model(*args): # рисование графика
         chart3.set_title(u'Продуктивность буровых')
         chart4.set_title(u'Ввод новой добычи и вывод старой')
         chart1.legend() # добавление и расположение легенд
-        chart1.legend(loc='upper left')
+        chart1.legend(loc='upper left', fontsize=11)
         chart2.legend()
-        chart2.legend(loc='upper left')
+        chart2.legend(loc='upper left', fontsize=11)
         chart3.legend()
-        chart3.legend(loc='upper left')
+        chart3.legend(loc='upper left', fontsize=11)
         chart4.legend()
-        chart4.legend(loc='upper left')
+        chart4.legend(loc='upper left', fontsize=11)
         chart1.set_ylabel(u'МБ/д')
         chart2.set_ylabel(u'Шт.')
         chart3.set_ylabel(u'Б/д на буровую')
         chart4.set_ylabel(u'кБ/д')
+        chart2.set_ylim(ymin=0)  # ордината от нуля
         plt.figtext(0.535, 0.737, u'"Селадо" по данным: EIA, собственные расчеты', size = 10, style='italic')
         i = i + 1
     #plt.show() # включить для sagemath и выключить строку ниже
-    plt.savefig('chart.png')   # сохранение нарисованного графика в файл
+    plt.savefig(filename)   # сохранение нарисованного графика в файл
