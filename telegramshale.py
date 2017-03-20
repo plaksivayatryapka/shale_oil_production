@@ -6,7 +6,7 @@ import telepot
 #from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
 from functions import draw_model
 
-token = '233453069:AAH3dL4PJK8CJxdMshGTUuZNdsm2RS8oP4I' # id бота
+token = '' # id бота
 TelegramBot = telepot.Bot(token)
 
 def handle(msg):
